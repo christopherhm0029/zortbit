@@ -1,13 +1,24 @@
+<div align="center">
+
 # Zortbit 🤖
 
-**Your own AI that learns how *you* file your mess — 100% on your Mac.**
+### Your own AI for your own mess.
 
-Zortbit is a tiny macOS menu-bar app that watches your Downloads, reads what files
-actually *are* (OCR for screenshots, text for documents), and proposes a tidy name plus
-the right folder — using a **local** model via [Ollama](https://ollama.com). Nothing
-leaves your machine, nothing is ever permanently deleted, and every move is reversible.
+**It learns how *you* file things — and does it 100% on your Mac.**
 
-![Zortbit organizing files into project folders by their content](docs/demo.png)
+![macOS 13+](https://img.shields.io/badge/macOS-13%2B-111?logo=apple&logoColor=white)
+&nbsp;![Rust + Tauri](https://img.shields.io/badge/Rust%20%2B%20Tauri-ce422b?logo=rust&logoColor=white)
+&nbsp;![100% on-device](https://img.shields.io/badge/100%25-on--device-3a8ee6)
+&nbsp;![License: MIT](https://img.shields.io/badge/license-MIT-3fae5a)
+
+<img src="docs/demo.png" alt="Zortbit reading files and proposing tidy names and the right folder" width="840">
+
+</div>
+
+Zortbit is a tiny macOS menu-bar app that watches your Downloads, reads what files actually
+*are* (OCR for screenshots, text for documents), and proposes a tidy name plus the right
+folder — using a **local** model. Nothing leaves your machine, nothing is ever permanently
+deleted, and every move is reversible.
 
 ## Why
 
@@ -96,11 +107,19 @@ approve the same kind of move a few times, set `"automation": "auto"` and it wil
 trusted, high-confidence moves silently in the background** as new files arrive. It will **never**
 auto-delete and **never** auto-touch sensitive files — those always wait for your explicit ok.
 
-## Roadmap
+## Roadmap — what's coming
 
-- Bundle the OCR sidecar + Developer ID signing/notarization for sharing the `.app`
-- Optional local vision model for text-less photos
-- "Gentle Mode" scheduler (throttle by system load, ETA, pre-shutdown alert)
+- **Gentle Mode scheduler** (the "Gentle · 3%" in the screenshot) — tidy quietly in the
+  background, throttled by system load, with an ETA and a heads-up before shutdown.
+- **One-click model presets** in onboarding — pick Ollama, Microsoft Foundry Local, or LM Studio
+  without hand-editing config.
+- **Pin-your-own rules** — "always send invoices to Finance", "never touch `~/Code`".
+- **Signed & notarized `.app`** + auto-update, so it shares without Gatekeeper warnings.
+- **Optional local vision model** for photos that have no text.
+- **Windows & Linux** builds.
+- A weekly **tidy digest** — what got filed, and what's still waiting on you.
+
+Ideas and PRs for any of these are very welcome.
 
 ## Contributing
 
