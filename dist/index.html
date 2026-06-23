@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Zortbit</title>
+<style>
+  :root{--ink:#0f2b3a;--m2:#5b6675;--m3:#7a8494;--teal:#1fb39a;--line:rgba(15,43,58,.09)}
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;color:var(--ink);
+    background:radial-gradient(circle at 16% 8%,rgba(255,183,178,.5) 0%,transparent 44%),
+      radial-gradient(circle at 88% 14%,rgba(167,196,255,.55) 0%,transparent 46%),
+      radial-gradient(circle at 26% 104%,rgba(151,228,205,.55) 0%,transparent 50%),
+      radial-gradient(circle at 98% 96%,rgba(214,189,255,.45) 0%,transparent 46%),
+      linear-gradient(135deg,#eef1f6,#e7ecf3)}
+  .wrap{max-width:380px;margin:0 auto;padding:14px 13px 24px}
+  .card{background:linear-gradient(160deg,rgba(255,255,255,.94),rgba(238,241,246,.84));
+    border:1px solid rgba(255,255,255,.75);border-radius:24px;padding:18px;
+    box-shadow:0 24px 60px rgba(18,38,58,.16),inset 0 1px 0 rgba(255,255,255,.95)}
+  .head{display:flex;align-items:center;gap:13px}
+  .badge{font-size:11px;font-weight:500;border-radius:7px;padding:2px 8px}
+  .btn{border:none;cursor:pointer;border-radius:11px;font-size:13px;font-weight:500;font-family:inherit;
+    display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:9px 13px;transition:transform .12s,filter .12s,background .12s}
+  .btn:active{transform:scale(.97)}
+  .go{background:linear-gradient(180deg,#28c4a6,#15a98e);color:#fff;box-shadow:0 5px 14px rgba(21,169,142,.32)}
+  .go:hover{filter:brightness(1.05)}
+  .gh{background:rgba(255,255,255,.82);border:1px solid rgba(15,43,58,.12);color:#33404f}
+  .gh:hover{background:#fff}
+  .danger{background:rgba(255,138,128,.16);border:1px solid rgba(211,84,84,.3);color:#a3352f}
+  .danger:hover{background:rgba(255,138,128,.26)}
+  .prop{background:rgba(255,255,255,.66);border:1px solid rgba(15,43,58,.07);border-radius:16px;padding:14px;margin-top:10px}
+  .recent{display:flex;align-items:center;gap:10px;padding:6px 0;font-size:12.5px}
+  .undo{display:inline-flex;align-items:center;gap:5px;border:1px solid rgba(15,43,58,.12);background:rgba(255,255,255,.6);
+    border-radius:999px;padding:4px 10px;font-size:11.5px;color:#5b6675;cursor:pointer}
+  @keyframes fl{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+  @keyframes gl{0%,100%{opacity:.5}50%{opacity:.95}}
+</style>
+</head>
+<body>
+<div class="wrap"><div class="card">
+
+  <div class="head">
+    <div style="position:relative;flex:none">
+      <div style="position:absolute;inset:-9px;border-radius:22px;background:radial-gradient(closest-side,rgba(31,179,154,.5),transparent);animation:gl 3.2s ease-in-out infinite"></div>
+      <svg width="54" height="54" viewBox="0 0 64 66" style="position:relative;animation:fl 4.6s ease-in-out infinite" aria-hidden="true">
+        <defs><linearGradient id="bd" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3ad2c4"/><stop offset="1" stop-color="#1f9fd1"/></linearGradient></defs>
+        <line x1="32" y1="13" x2="32" y2="6" stroke="#16a89f" stroke-width="2.6" stroke-linecap="round"/><circle cx="32" cy="4.4" r="3.2" fill="#34d399"/>
+        <rect x="7" y="13" width="50" height="46" rx="17" fill="url(#bd)"/>
+        <rect x="13" y="22" width="38" height="29" rx="13" fill="#0e5e64"/>
+        <rect x="20" y="30" width="9" height="12" rx="4.5" fill="#fff"/><rect x="35" y="30" width="9" height="12" rx="4.5" fill="#fff"/>
+        <path d="M25 45.5 Q32 49.5 39 45.5" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div style="flex:1;min-width:0">
+      <div style="font-size:18px;font-weight:500">Zortbit</div>
+      <div style="color:var(--m2);font-size:12.5px;margin-top:1px" id="status">Starting…</div>
+    </div>
+    <button class="btn go" id="scan"><i class="ti ti-sparkles" aria-hidden="true"></i> Scan my mess</button>
+  </div>
+
+  <div id="cfg" style="margin-top:12px;color:var(--m3);font-size:11.5px"></div>
+
+  <div style="margin-top:14px;display:flex;justify-content:space-between;align-items:baseline">
+    <span style="color:var(--m3);font-size:11px;text-transform:uppercase;letter-spacing:.06em">Proposals</span>
+    <span style="color:var(--m2);font-size:12.5px"><b id="pcount" style="font-weight:500">0</b> waiting</span>
+  </div>
+
+  <div id="bar" style="display:none;gap:8px;margin-top:12px"></div>
+
+  <div id="empty" style="margin-top:10px;text-align:center;color:var(--m3);font-size:13px;padding:20px 0;border:1px dashed rgba(15,43,58,.14);border-radius:14px">
+    Hit <b>Scan my mess</b> or drop a file in <b>Downloads</b>. Nothing moves until you approve. Desktop is left alone.
+  </div>
+  <div id="props"></div>
+
+  <div style="margin-top:16px;display:flex;justify-content:space-between;align-items:baseline">
+    <span style="color:var(--m3);font-size:11px;text-transform:uppercase;letter-spacing:.06em">Recent</span>
+    <span style="color:var(--m3);font-size:11.5px">Every move is reversible</span>
+  </div>
+  <div id="recent"></div>
+
+  <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--line);color:var(--m3);font-size:11.5px">
+    Propose-first · never deletes — only your-approved moves to Trash · local-first
+  </div>
+
+</div></div>
+
+<script>
+  const T = window.__TAURI__;
+  const $ = (id) => document.getElementById(id);
+  const propsEl = $('props'), emptyEl = $('empty'), recentEl = $('recent'), barEl = $('bar');
+  const items = {};        // id -> { p, el }
+
+  const tilde = (s) => (s || '').replace(/^\/Users\/[^/]+\//, '~/');
+
+  function counts(){
+    let mv = 0, tr = 0;
+    Object.values(items).forEach(it => it.p.action === 'trash' ? tr++ : mv++);
+    return { mv, tr };
+  }
+  function renderBar(){
+    const { mv, tr } = counts();
+    $('pcount').textContent = mv + tr;
+    if (mv + tr === 0){ barEl.style.display = 'none'; emptyEl.style.display = 'block'; return; }
+    emptyEl.style.display = 'none';
+    barEl.style.display = 'flex';
+    barEl.innerHTML = '';
+    if (mv > 0){
+      const b = document.createElement('button'); b.className = 'btn go'; b.style.flex = '1';
+      b.innerHTML = '<i class="ti ti-checks" aria-hidden="true"></i> Approve all ' + mv + ' moves';
+      b.onclick = () => approveGroup('move'); barEl.appendChild(b);
+    }
+    if (tr > 0){
+      const b = document.createElement('button'); b.className = 'btn danger';
+      let armedB = false;
+      const lbl = () => { b.innerHTML = '<i class="ti ti-trash" aria-hidden="true"></i> Review &amp; trash ' + counts().tr; };
+      lbl();
+      b.onclick = () => {
+        if (!armedB){ armedB = true; b.innerHTML = '<i class="ti ti-alert-triangle" aria-hidden="true"></i> Confirm — trash ' + counts().tr + '?'; setTimeout(() => { if (armedB){ armedB = false; lbl(); } }, 5000); return; }
+        approveGroup('trash');
+      };
+      barEl.appendChild(b);
+    }
+  }
+  function removeItem(id){ const it = items[id]; if(!it) return; it.el.remove(); delete items[id]; renderBar(); }
+
+  function fmtTarget(p){
+    if (p.action === 'trash') return '<span class="badge" style="background:rgba(255,138,128,.16);color:#a3352f"><i class="ti ti-trash" aria-hidden="true"></i> Trash</span>';
+    return '<span class="badge" style="background:rgba(31,179,154,.14);color:#0a8c61"><i class="ti ti-folder" aria-hidden="true"></i> ' + tilde(p.target_folder) + '</span>';
+  }
+
+  function addProposal(p){
+    if (Object.values(items).some(it => it.p.path === p.path)) return; // de-dupe by path
+    const el = document.createElement('div'); el.className = 'prop';
+    const conf = p.source === 'sensitive' ? 'Quarantine' : (p.source === 'local' ? 'Local · ' : 'Rule · ') + p.confidence + '%';
+    const target = p.action === 'trash' ? '' :
+      '<div style="font-size:14px;font-weight:500;margin-top:3px"><i class="ti ti-arrow-right" aria-hidden="true" style="color:#15a98e"></i> ' + p.suggested_name + '</div>';
+    el.innerHTML =
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">' +
+        (p.source === 'sensitive'
+          ? '<span style="color:#8a5a00;font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.05em"><i class="ti ti-lock" aria-hidden="true"></i> Sensitive · review</span>'
+          : p.action === 'trash'
+          ? '<span style="color:#a3352f;font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.05em"><i class="ti ti-alert-triangle" aria-hidden="true"></i> Review · deletion</span>'
+          : '<span style="color:var(--m3);font-size:11px;text-transform:uppercase;letter-spacing:.05em">New file</span>') +
+        '<span class="badge" style="background:rgba(31,179,154,.13);color:#0a8c61">' + conf + '</span></div>' +
+      '<div style="color:var(--m3);font-size:12.5px;' + (p.action === 'trash' ? '' : 'text-decoration:line-through') + ';overflow-wrap:anywhere">' + p.current_name + '</div>' +
+      target +
+      '<div style="margin-top:9px">' + fmtTarget(p) + '</div>' +
+      '<div style="color:var(--m2);font-size:12px;margin-top:9px;display:flex;gap:6px"><i class="ti ti-info-circle" aria-hidden="true" style="margin-top:1px"></i><span>' + p.reasoning + '</span></div>' +
+      '<div style="display:flex;gap:8px;margin-top:12px">' +
+        '<button class="btn ' + (p.action === 'trash' ? 'danger' : 'go') + '" style="flex:1"><i class="ti ti-check" aria-hidden="true"></i> ' + (p.action === 'trash' ? 'Trash it' : 'Approve') + '</button>' +
+        '<button class="btn gh"><i class="ti ti-x" aria-hidden="true"></i> Skip</button></div>';
+    const [approveBtn, skipBtn] = el.querySelectorAll('button');
+    let armed = false;
+    const resetBtns = () => {
+      armed = false; approveBtn.disabled = false;
+      approveBtn.innerHTML = '<i class="ti ti-check" aria-hidden="true"></i> ' + (p.action === 'trash' ? 'Trash it' : 'Approve');
+      skipBtn.innerHTML = '<i class="ti ti-x" aria-hidden="true"></i> Skip';
+    };
+    const doApprove = async () => {
+      approveBtn.disabled = true; approveBtn.textContent = 'Working…';
+      try{
+        const moveId = await T.core.invoke('approve', { proposal: p });
+        removeItem(p.id); addRecent(p, moveId);
+      }catch(err){
+        if (String(err).toLowerCase().includes('no longer exist')){ removeItem(p.id); $('status').textContent = 'Already moved — skipped.'; }
+        else { resetBtns(); $('status').textContent = 'Failed: ' + err; }
+      }
+    };
+    approveBtn.onclick = () => {
+      // In-app confirm for deletions — a native confirm() blurs & auto-hides the popover (the bug).
+      if (p.action === 'trash' && !armed){
+        armed = true;
+        approveBtn.innerHTML = '<i class="ti ti-alert-triangle" aria-hidden="true"></i> Confirm — to Trash';
+        skipBtn.textContent = 'Cancel';
+        setTimeout(() => { if (armed) resetBtns(); }, 5000);
+        return;
+      }
+      doApprove();
+    };
+    skipBtn.onclick = async () => {
+      if (armed){ resetBtns(); return; }   // acts as Cancel while armed
+      try{ await T.core.invoke('skip', { proposal: p }); }catch(e){}
+      removeItem(p.id);
+    };
+    items[p.id] = { p, el };
+    propsEl.appendChild(el);
+    renderBar();
+  }
+
+  let batchTotal = 0, batchOk = 0, batchFail = 0, batchStale = 0, batchUndo = [], batchFirstErr = '', batchAction = '';
+  async function approveGroup(action){
+    const batch = Object.values(items).filter(it => action === 'trash' ? it.p.action === 'trash' : it.p.action !== 'trash').map(it => it.p);
+    if (!batch.length) return;
+    barEl.querySelectorAll('button').forEach(b => b.disabled = true);
+    batchTotal = batch.length; batchOk = 0; batchFail = 0; batchStale = 0; batchUndo = []; batchFirstErr = ''; batchAction = action;
+    $('status').textContent = 'Applying ' + batch.length + ' ' + (action === 'trash' ? 'deletions' : 'moves') + '… (in the background)';
+    // Fire-and-forget: results stream back via apply-result / apply-done so the UI never freezes.
+    try{ await T.core.invoke('approve_many', { proposals: batch }); }
+    catch(e){ $('status').textContent = 'Error: ' + e; renderBar(); }
+  }
+
+  function addRecent(p, moveId){
+    const r = document.createElement('div'); r.className = 'recent';
+    const icon = p.action === 'trash' ? '<i class="ti ti-trash" style="color:#ff8a80;font-size:16px"></i>' : '<i class="ti ti-folder-check" style="color:#15a98e;font-size:16px"></i>';
+    const label = p.action === 'trash' ? (p.current_name + ' → Trash') : (p.suggested_name + ' filed');
+    r.innerHTML = icon + '<div style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + label + '</div>';
+    if (p.action !== 'trash'){
+      const u = document.createElement('span'); u.className = 'undo'; u.innerHTML = '<i class="ti ti-arrow-back-up" aria-hidden="true"></i> Undo';
+      u.onclick = async () => { try{ await T.core.invoke('undo_move', { id: moveId }); r.remove(); }catch(e){ $('status').textContent = 'Undo failed: ' + e; } };
+      r.appendChild(u);
+    }
+    recentEl.prepend(r);
+  }
+
+  function addRecentSummary(label, undoIds){
+    const r = document.createElement('div'); r.className = 'recent';
+    r.innerHTML = '<i class="ti ti-stack-2" style="color:#15a98e;font-size:16px"></i><div style="flex:1;font-weight:500">' + label + '</div>';
+    if (undoIds && undoIds.length){
+      const u = document.createElement('span'); u.className = 'undo'; u.innerHTML = '<i class="ti ti-arrow-back-up" aria-hidden="true"></i> Undo all';
+      u.onclick = async () => { for (const id of undoIds){ try{ await T.core.invoke('undo_move', { id }); }catch(e){} } r.remove(); };
+      r.appendChild(u);
+    }
+    recentEl.prepend(r);
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && T && T.window) { try{ T.window.getCurrentWindow().hide(); }catch(_){} }
+  });
+
+  if (T && T.event){
+    $('status').textContent = 'Watching Downloads · Desktop excluded';
+    T.event.listen('proposal', (e) => addProposal(e.payload));
+    T.event.listen('scan-done', () => { $('status').textContent = 'Scan complete · review below'; });
+    T.event.listen('apply-result', (e) => {
+      const r = e.payload;
+      if (r.ok){ batchOk++; if (r.action === 'move') batchUndo.push(r.move_id); removeItem(r.id); }
+      else if ((r.error || '').toLowerCase().includes('no longer exist')){ batchStale++; removeItem(r.id); } // already gone — drop it
+      else { batchFail++; if (!batchFirstErr) batchFirstErr = r.error || ''; }
+      $('status').textContent = 'Working… ' + (batchOk + batchFail + batchStale) + ' / ' + batchTotal;
+    });
+    T.event.listen('apply-done', () => {
+      if (batchOk > 0){
+        if (batchAction === 'trash') addRecentSummary('Sent ' + batchOk + ' item(s) to Trash — recoverable in Finder', null);
+        else addRecentSummary('Filed ' + batchOk + ' file(s)', batchUndo);
+      }
+      $('status').textContent = batchFail
+        ? (batchOk + ' done · ' + batchFail + ' failed: ' + batchFirstErr)
+        : (batchOk > 0 ? ('Done · ' + batchOk + ' applied' + (batchStale ? ' · ' + batchStale + ' already gone' : '')) : 'Up to date');
+      batchTotal = 0; renderBar();
+    });
+    $('scan').onclick = () => { $('status').textContent = 'Scanning your files…'; T.core.invoke('scan_bulk'); };
+    T.core.invoke('get_config').then(c => {
+      $('cfg').textContent = 'naming: ' + c.naming + ' · ' + c.automation + '-first · never auto-deletes · scope: ' + c.bulk_scope.join(', ') + ' · model: ' + c.model;
+    }).catch(()=>{});
+  } else {
+    $('status').textContent = 'Open via `npm run dev` to go live';
+    $('scan').disabled = true;
+  }
+</script>
+</body>
+</html>
