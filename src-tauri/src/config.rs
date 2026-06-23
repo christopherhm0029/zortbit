@@ -21,6 +21,16 @@ pub struct Config {
     pub organize_base: String, // single LOCAL (non-iCloud) root for organized files
     #[serde(default = "default_categories")]
     pub categories: Vec<String>, // closed list of project/area folders qwen may choose from
+    #[serde(default = "default_provider")]
+    pub provider: String, // "ollama" (native) | "openai" (OpenAI-compatible: Foundry Local, LM Studio…)
+    #[serde(default)]
+    pub endpoint: String, // OpenAI-compatible chat URL (used when provider != "ollama")
+    #[serde(default)]
+    pub api_key: String, // optional bearer token (local servers usually need none)
+}
+
+fn default_provider() -> String {
+    "ollama".into()
 }
 
 fn default_true() -> bool {
@@ -64,6 +74,9 @@ impl Default for Config {
             learn_from_decisions: true,
             organize_base: "Organized".into(),
             categories: default_categories(),
+            provider: "ollama".into(),
+            endpoint: String::new(),
+            api_key: String::new(),
         }
     }
 }

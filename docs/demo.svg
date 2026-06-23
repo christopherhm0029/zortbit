@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1120 750" font-family="-apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f3f1ec"/><stop offset="1" stop-color="#e7ecf3"/>
+    </linearGradient>
+    <linearGradient id="otto" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3ad2c4"/><stop offset="1" stop-color="#1f9fd1"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="0" y="0" width="1120" height="750" rx="28" fill="url(#bg)"/>
+  <circle cx="120" cy="70" r="240" fill="#ffb7b2" opacity="0.16"/>
+  <circle cx="1030" cy="110" r="280" fill="#a7c4ff" opacity="0.16"/>
+  <circle cx="300" cy="760" r="320" fill="#97e4cd" opacity="0.18"/>
+
+  <!-- Otto mascot -->
+  <g transform="translate(64,46) scale(1.35)">
+    <line x1="32" y1="13" x2="32" y2="6" stroke="#16a89f" stroke-width="2.6" stroke-linecap="round"/>
+    <circle cx="32" cy="4.4" r="3.2" fill="#34d399"/>
+    <rect x="7" y="13" width="50" height="46" rx="17" fill="url(#otto)"/>
+    <rect x="13" y="22" width="38" height="29" rx="13" fill="#0e5e64"/>
+    <rect x="20" y="30" width="9" height="12" rx="4.5" fill="#fff"/>
+    <rect x="35" y="30" width="9" height="12" rx="4.5" fill="#fff"/>
+    <path d="M25 45.5 Q32 49.5 39 45.5" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/>
+  </g>
+  <text x="176" y="92" font-size="40" font-weight="600" fill="#0f2b3a">Zortbit</text>
+  <text x="178" y="132" font-size="22" fill="#5b6675">Your own AI for your own mess — 100% on your Mac.</text>
+
+  <!-- panel -->
+  <rect x="64" y="168" width="992" height="392" rx="26" fill="#ffffff" opacity="0.95"/>
+
+  <!-- row 1 -->
+  <text x="96" y="226" font-size="18" fill="#9aa3ad" text-decoration="line-through">Scan_2026_03_18 (1).pdf</text>
+  <text x="96" y="260" font-size="24" font-weight="600" fill="#0f2b3a">&#8594;  acme-invoice-march.pdf</text>
+  <rect x="96" y="276" width="206" height="30" rx="8" fill="#d6f1e8"/>
+  <text x="110" y="297" font-size="15" font-weight="600" fill="#0a8c61">Finance / Invoices</text>
+  <text x="320" y="297" font-size="15" fill="#5b6675">reads like an invoice — vendor, totals, due date</text>
+
+  <!-- row 2 -->
+  <text x="96" y="346" font-size="18" fill="#9aa3ad" text-decoration="line-through">Screenshot 2026-03-12 at 09.41.png</text>
+  <text x="96" y="380" font-size="24" font-weight="600" fill="#0f2b3a">&#8594;  checkout-error-500.png</text>
+  <rect x="96" y="396" width="104" height="30" rx="8" fill="#d6f1e8"/>
+  <text x="110" y="417" font-size="15" font-weight="600" fill="#0a8c61">Design</text>
+  <rect x="212" y="396" width="134" height="30" rx="8" fill="#e3e9fb"/>
+  <text x="226" y="417" font-size="15" font-weight="600" fill="#5a43b8">read the screen</text>
+  <text x="362" y="417" font-size="15" fill="#5b6675">OCR pulled the text out of the image</text>
+
+  <!-- row 3 -->
+  <text x="96" y="466" font-size="18" fill="#9aa3ad" text-decoration="line-through">doc final FINAL v2 (3).docx</text>
+  <text x="96" y="500" font-size="24" font-weight="600" fill="#0f2b3a">&#8594;  q1-board-summary.docx</text>
+  <rect x="96" y="516" width="92" height="30" rx="8" fill="#d6f1e8"/>
+  <text x="110" y="537" font-size="15" font-weight="600" fill="#0a8c61">Work</text>
+  <text x="206" y="537" font-size="15" fill="#5b6675">learned: you file board decks here</text>
+
+  <!-- chips -->
+  <g font-size="15" font-weight="600">
+    <rect x="64" y="598" width="196" height="40" rx="20" fill="#ffffff" opacity="0.85" stroke="#d3d8e0"/>
+    <text x="84" y="623" fill="#0a8c61">100% on-device</text>
+    <rect x="276" y="598" width="206" height="40" rx="20" fill="#ffffff" opacity="0.85" stroke="#d3d8e0"/>
+    <text x="296" y="623" fill="#4a43b8">learns your filing</text>
+    <rect x="498" y="598" width="262" height="40" rx="20" fill="#ffffff" opacity="0.85" stroke="#d3d8e0"/>
+    <text x="518" y="623" fill="#1380ad">reads inside files (OCR)</text>
+    <rect x="776" y="598" width="246" height="40" rx="20" fill="#ffffff" opacity="0.85" stroke="#d3d8e0"/>
+    <text x="796" y="623" fill="#15a98e">never deletes · undo</text>
+  </g>
+
+  <text x="64" y="702" font-size="15" fill="#7a8494">Zortbit — a tiny menu-bar app · built with Rust + Tauri · your files never leave your Mac</text>
+</svg>

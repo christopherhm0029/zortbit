@@ -140,6 +140,12 @@ struct ApplyResult {
     error: String,
 }
 
+#[derive(Clone, Serialize)]
+struct AutoApplied {
+    proposal: Proposal,
+    move_id: String,
+}
+
 // Batch approve — runs on a worker thread (its own DB connection) and streams
 // "apply-result" events, so the UI stays responsive even for 100s of files
 // (and slow Finder-backed trashes don't freeze the app).
@@ -302,6 +308,43 @@ fn watch(handle: tauri::AppHandle, cfg: Config, ocr_bin: Option<std::path::PathB
                         if let Some(prop) =
                             engine::propose(path, &cfg, &home, c, ocr_bin.as_deref(), &hints)
                         {
+                            // Auto mode: silently apply a TRUSTED, high-confidence MOVE in the
+                            // background. Never auto-trash, never auto-touch sensitive files.
+                            if cfg.automation == "auto"
+                                && prop.action == "move"
+                                && prop.source != "sensitive"
+                                && prop.confidence >= 85
+                            {
+                                if let Some(conn) = hint_conn.as_ref() {
+                                    let cat = std::path::Path::new(&prop.target_folder)
+                                        .file_name()
+                                        .and_then(|s| s.to_str())
+                                        .unwrap_or("")
+                                        .to_string();
+                                    let ext = ext_of(&prop.current_name);
+                                    if db::trusted_count(conn, &ext, &cat) >= 3 {
+                                        if let Ok(move_id) = mover::apply(
+                                            conn,
+                                            &prop.path,
+                                            &prop.action,
+                                            &prop.target_folder,
+                                            &prop.suggested_name,
+                                        ) {
+                                            let _ = db::log_decision(
+                                                conn, &now(), "approve", &prop.action, &ext,
+                                                &prop.current_name, &prop.suggested_name,
+                                                &prop.target_folder, &prop.source,
+                                            );
+                                            println!("[zortbit] auto-filed: {}", prop.current_name);
+                                            let _ = handle.emit(
+                                                "auto-applied",
+                                                AutoApplied { proposal: prop, move_id },
+                                            );
+                                            continue;
+                                        }
+                                    }
+                                }
+                            }
                             println!("[zortbit] proposal: {}", prop.current_name);
                             let _ = handle.emit("proposal", prop);
                         }

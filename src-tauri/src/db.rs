@@ -86,6 +86,19 @@ pub fn learned_hints(conn: &Connection) -> rusqlite::Result<Vec<(String, String,
     rows.collect()
 }
 
+// How many times the user has approved this (ext -> category) move. Auto-mode
+// uses this as the "trusted pattern" signal to act without asking.
+pub fn trusted_count(conn: &Connection, ext: &str, cat: &str) -> i64 {
+    conn.query_row(
+        "SELECT COUNT(*) FROM decisions
+         WHERE decision='approve' AND action='move' AND source='local'
+           AND ext=?1 AND target_folder LIKE '%/' || ?2",
+        rusqlite::params![ext, cat],
+        |r| r.get(0),
+    )
+    .unwrap_or(0)
+}
+
 // Log every approve/skip so Zortbit can later learn the user's habits
 // (e.g. "you usually delete .dmg installers").
 #[allow(clippy::too_many_arguments)]

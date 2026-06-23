@@ -249,6 +249,11 @@
         : (batchOk > 0 ? ('Done · ' + batchOk + ' applied' + (batchStale ? ' · ' + batchStale + ' already gone' : '')) : 'Up to date');
       batchTotal = 0; renderBar();
     });
+    T.event.listen('auto-applied', (e) => {
+      const p = e.payload.proposal, mid = e.payload.move_id;
+      addRecent(p, mid);
+      $('status').textContent = 'Auto-filed ' + (p.suggested_name || p.current_name);
+    });
     $('scan').onclick = () => { $('status').textContent = 'Scanning your files…'; T.core.invoke('scan_bulk'); };
     T.core.invoke('get_config').then(c => {
       $('cfg').textContent = 'naming: ' + c.naming + ' · ' + c.automation + '-first · never auto-deletes · scope: ' + c.bulk_scope.join(', ') + ' · model: ' + c.model;

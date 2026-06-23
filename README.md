@@ -7,8 +7,7 @@ actually *are* (OCR for screenshots, text for documents), and proposes a tidy na
 the right folder — using a **local** model via [Ollama](https://ollama.com). Nothing
 leaves your machine, nothing is ever permanently deleted, and every move is reversible.
 
-<!-- Add a screenshot here once you have one: -->
-<!-- ![Zortbit](docs/demo.png) -->
+![Zortbit organizing files into project folders by their content](docs/demo.png)
 
 ## Why
 
@@ -72,7 +71,30 @@ Edit `~/Library/Application Support/com.xaviour.zortbit/config.json`:
 | `bulk_scope` | Folders to scan |
 | `protected` | Folders Zortbit must never touch |
 | `organize_base` | Where organized files go (default `~/Organized`, kept local) |
-| `model` | Ollama model id |
+| `model` | The model id (e.g. `qwen2.5:3b`) |
+| `provider` | `ollama` (default) or `openai` for any OpenAI-compatible server |
+| `endpoint` | OpenAI-compatible chat URL (used when `provider` is `openai`) |
+| `automation` | `propose` (default) · or `auto` to file trusted patterns in the background |
+
+### Use any local model — Ollama, Foundry Local, LM Studio…
+
+Zortbit talks to a local model server. By default that's [Ollama](https://ollama.com). To use
+any other **OpenAI-compatible** local server — including **Microsoft Foundry Local**, LM Studio,
+or `llama.cpp`'s server — set this in `config.json`:
+
+```json
+{ "provider": "openai", "endpoint": "http://localhost:PORT/v1/chat/completions", "model": "your-model" }
+```
+
+For Foundry Local, start the service and read its endpoint from `foundry service status`, then
+drop that URL in. Everything still runs on your machine — nothing goes to the cloud.
+
+### Automatic mode (it learns)
+
+By default Zortbit is **propose-first** — nothing moves until you approve. Once it has seen you
+approve the same kind of move a few times, set `"automation": "auto"` and it will **file those
+trusted, high-confidence moves silently in the background** as new files arrive. It will **never**
+auto-delete and **never** auto-touch sensitive files — those always wait for your explicit ok.
 
 ## Roadmap
 
