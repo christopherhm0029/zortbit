@@ -324,8 +324,10 @@ pub fn propose(
     // --- Learned brain: place by resemblance to your real folders. ---
     let mut file_tokens = std::collections::HashMap::new();
     crate::learn::tokenize(stem, &mut file_tokens);
+    // Tokens from the FILENAME alone — the strong "named after the project" signal.
+    let name_tokens: std::collections::HashSet<String> = file_tokens.keys().cloned().collect();
     crate::learn::tokenize(&content, &mut file_tokens);
-    if let Some(m) = crate::learn::best_match(&file_tokens, folders) {
+    if let Some(m) = crate::learn::best_match(&file_tokens, &name_tokens, folders) {
         if m.confidence >= 50 {
             let n = folders
                 .iter()

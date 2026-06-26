@@ -189,7 +189,11 @@ pub fn learn_folders(home: &Path, roots: &[String], protected: &[PathBuf]) -> Ve
 
 // Score a new file's tokens against every fingerprint. IDF-weights tokens so
 // ones shared by many folders count for little; the most distinctive overlap wins.
-pub fn best_match(file_tokens: &HashMap<String, u32>, folders: &[Folder]) -> Option<Match> {
+pub fn best_match(
+    file_tokens: &HashMap<String, u32>,
+    name_tokens: &HashSet<String>,
+    folders: &[Folder],
+) -> Option<Match> {
     if folders.is_empty() || file_tokens.is_empty() {
         return None;
     }
@@ -208,18 +212,36 @@ pub fn best_match(file_tokens: &HashMap<String, u32>, folders: &[Folder]) -> Opt
     let mut scored: Vec<(f64, &Folder, Vec<(String, f64)>)> = folders
         .iter()
         .map(|f| {
-            let mut s = 0.0;
-            let mut shared: Vec<(String, f64)> = Vec::new();
+            let mut shared: HashMap<String, f64> = HashMap::new();
+            // Distinctive content/filename overlap — rare tokens score higher.
             for t in file_tokens.keys() {
                 if f.tokens.contains_key(t) {
                     let w = idf(t);
                     if w > 0.0 {
-                        s += w;
-                        shared.push((t.clone(), w));
+                        let e = shared.entry(t.clone()).or_insert(0.0);
+                        if w > *e {
+                            *e = w;
+                        }
                     }
                 }
             }
-            (s, f, shared)
+            // Decisive: the file is NAMED after this folder's project — the name
+            // token is in the *filename*, not just buried in content. A file called
+            // "Joblar_*.pptx" belongs in Joblar even if its contents resemble a
+            // sibling folder where stray Joblar files were dropped. A folder name
+            // that only appears inside content (an employer named in a CV) gets no
+            // such bonus, so it can't hijack the file.
+            let mut name_toks = HashMap::new();
+            tokenize(&f.name, &mut name_toks);
+            for nt in name_toks.keys() {
+                if name_tokens.contains(nt) {
+                    *shared.entry(nt.clone()).or_insert(0.0) += 8.0;
+                }
+            }
+            let s: f64 = shared.values().sum();
+            let mut sh: Vec<(String, f64)> = shared.into_iter().collect();
+            sh.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
+            (s, f, sh)
         })
         .collect();
     scored.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap_or(std::cmp::Ordering::Equal));
@@ -267,26 +289,41 @@ mod tests {
 
     #[test]
     fn places_by_distinctive_overlap_not_keyword() {
+        // 'joblar'/'construction' are borrowed into Xaviour-AI (Joblar decks
+        // physically live there), so a Joblar deck's CONTENT resembles Xaviour-AI.
         let folders = vec![
-            folder("Joblar", &["joblar", "construction", "matching", "platform", "recruitment"]),
-            folder("Personal-Docs", &["passport", "resume", "tax", "family", "aws"]),
-            folder("Microsoft", &["azure", "copilot", "github", "customer", "agent"]),
+            folder("Joblar", &["joblar", "construction", "matching", "platform"]),
+            folder("Xaviour-AI", &["xaviour", "joblar", "construction", "market", "laura", "global"]),
+            folder("Personal-Docs", &["passport", "resume", "aws", "enterprise", "technical", "microsoft"]),
+            folder("Microsoft", &["azure", "copilot", "github", "microsoft", "agent"]),
+            folder("Learning", &["course", "exam", "microsoft", "azure"]),
         ];
 
-        // A CV mentioning AWS + Microsoft must NOT go to Microsoft — "aws" is the
-        // distinctive signal and lives in Personal-Docs.
-        let mut cv = HashMap::new();
-        tokenize("christopher herrera aws senior solutions architect microsoft", &mut cv);
-        assert_eq!(best_match(&cv, &folders).unwrap().category, "Personal-Docs");
+        // A file NAMED Joblar → Joblar, even though its pitch CONTENT leans Xaviour-AI.
+        let mut jb = HashMap::new();
+        tokenize("joblar ndrc deck", &mut jb);
+        let jb_name: HashSet<String> = jb.keys().cloned().collect();
+        tokenize("global market laura pitch construction", &mut jb);
+        assert_eq!(best_match(&jb, &jb_name, &folders).unwrap().category, "Joblar");
 
-        // A Joblar deck resembles the Joblar folder by its real content.
-        let mut deck = HashMap::new();
-        tokenize("joblar ireland construction matching platform deck", &mut deck);
-        assert_eq!(best_match(&deck, &folders).unwrap().category, "Joblar");
+        // A Xaviour file → Xaviour-AI.
+        let mut xv = HashMap::new();
+        tokenize("xaviour v2 prototype", &mut xv);
+        let xv_name: HashSet<String> = xv.keys().cloned().collect();
+        assert_eq!(best_match(&xv, &xv_name, &folders).unwrap().category, "Xaviour-AI");
+
+        // CV: filename names no project; 'microsoft' is only in its CONTENT, so it
+        // must NOT hijack the file. Distinctive 'aws'/'enterprise' → Personal-Docs.
+        let mut cv = HashMap::new();
+        tokenize("christopher herrera aws senior solutions architect", &mut cv);
+        let cv_name: HashSet<String> = cv.keys().cloned().collect();
+        tokenize("microsoft enterprise cloud customer", &mut cv);
+        assert_eq!(best_match(&cv, &cv_name, &folders).unwrap().category, "Personal-Docs");
 
         // No overlap → no forced match (caller falls back to the model/type).
         let mut noise = HashMap::new();
         tokenize("zzz qqq vvv", &mut noise);
-        assert!(best_match(&noise, &folders).is_none());
+        let noise_name: HashSet<String> = noise.keys().cloned().collect();
+        assert!(best_match(&noise, &noise_name, &folders).is_none());
     }
 }

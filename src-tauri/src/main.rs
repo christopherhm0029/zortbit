@@ -237,6 +237,33 @@ fn relearn(app: tauri::AppHandle) {
 fn main() {
     let cfg = Config::load_or_init();
 
+    // Headless: classify ONE real file path against the learned folders. (Debug aid.)
+    if let Some(pos) = std::env::args().position(|a| a == "--classify") {
+        let path = std::env::args().nth(pos + 1).unwrap_or_default();
+        let home = home();
+        let folders = learn::learn_folders(&home, &cfg.learn_roots, &cfg.protected_paths(&home));
+        let p = std::path::PathBuf::from(&path);
+        let stem = p.file_stem().and_then(|s| s.to_str()).unwrap_or("");
+        let ext = p.extension().and_then(|s| s.to_str()).unwrap_or("").to_lowercase();
+        let mut toks = std::collections::HashMap::new();
+        learn::tokenize(stem, &mut toks);
+        let name_tokens: std::collections::HashSet<String> = toks.keys().cloned().collect();
+        if let Some(c) = engine::extract_text(&p, &ext) {
+            learn::tokenize(&c, &mut toks);
+        }
+        match learn::best_match(&toks, &name_tokens, &folders) {
+            Some(m) => println!(
+                "{}\n  -> {} (conf {}) shares: {}",
+                path,
+                m.category,
+                m.confidence,
+                m.shared.join(", ")
+            ),
+            None => println!("{}\n  -> (no learned match — model/type fallback)", path),
+        }
+        return;
+    }
+
     // Headless: print the folder taxonomy Zortbit learns, then exit. (Debug aid.)
     if std::env::args().any(|a| a == "--learn-dump") {
         let home = home();
