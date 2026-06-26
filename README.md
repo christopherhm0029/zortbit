@@ -67,11 +67,15 @@ npm run tauri build -- --bundles app
 
 ## How it works
 
-1. A file watcher (FSEvents) wakes on new files in your configured folders.
-2. Content is extracted **locally** — Vision OCR for images, built-in tools for documents.
-3. A local model (`qwen2.5:3b` via Ollama) picks one folder from a closed list, and the
-   file is renamed kebab-case. Unclassifiable files fall back to a type folder.
-4. You approve; the move is logged so it stays reversible and so Zortbit learns your style.
+1. **Learns your folders** — Zortbit reads your real folder structure (`learn_roots`) and
+   fingerprints what already lives in each (filenames + a light content sample). Code repos and
+   dumps are skipped. This *is* your taxonomy — discovered from your machine, not configured.
+2. A file watcher (FSEvents) wakes on new files in your scanned folders; content is extracted
+   **locally** — Vision OCR for images, built-in tools for documents.
+3. **Places by resemblance** — the new file is scored against every folder's fingerprint and
+   filed into the one it most resembles, with a reason you can see (*"resembles your Joblar
+   folder — shares: construction, matching"*). A local model is the fallback for novel files.
+4. You approve; the move is logged so it stays reversible and Zortbit keeps learning your style.
 
 ## Configuration
 
@@ -79,9 +83,10 @@ Edit `~/Library/Application Support/com.xaviour.zortbit/config.json`:
 
 | Key | Meaning |
 |---|---|
-| `categories` | Your project/area folders — the closed list the model chooses from |
-| `category_help` | Optional one-line **meaning per category** — so the model files by intent, not by a stray keyword |
-| `rules` | Optional `{ "contains": "…", "category": "…" }` list — deterministic filename-keyword routing, applied **before** the model |
+| `learn_roots` | Folders whose subfolders Zortbit learns as your taxonomy + fingerprints |
+| `categories` | Optional manual category list — **auto-discovered from `learn_roots` when empty** |
+| `category_help` | Optional one-line meaning per category (override for the fallback model) |
+| `rules` | Optional `{ "contains": "…", "category": "…" }` list — deterministic filename routing, applied **before** the model |
 | `bulk_scope` | Folders to scan |
 | `protected` | Folders Zortbit must never touch |
 | `organize_base` | Where organized files go (default `~/Organized`, kept local) |
@@ -90,9 +95,11 @@ Edit `~/Library/Application Support/com.xaviour.zortbit/config.json`:
 | `endpoint` | OpenAI-compatible chat URL (used when `provider` is `openai`) |
 | `automation` | `propose` (default) · or `auto` to file trusted patterns in the background |
 
-### Teach it your folders
+### It learns your folders automatically
 
-Definitions + rules are the difference between "guesses by keyword" and "files like you would":
+By default Zortbit discovers your taxonomy from `learn_roots` and files new items by how much they
+resemble what's already in each folder — no setup. The `category_help` and `rules` below are
+**optional overrides** for when you want to force something:
 
 ```json
 {

@@ -6,6 +6,7 @@
 mod config;
 mod db;
 mod engine;
+mod learn;
 mod mover;
 mod ocr;
 
@@ -66,6 +67,16 @@ fn scan_bulk(app: tauri::AppHandle, state: State<AppState>) {
     let base = state.counter.fetch_add(100_000, Ordering::SeqCst);
     std::thread::spawn(move || {
         let home = home();
+        // Learned taxonomy: use the cache; build it on first run.
+        let conn = db::open().ok();
+        let mut folders = conn.as_ref().map(db::load_folders).unwrap_or_default();
+        if folders.is_empty() {
+            folders = learn::learn_folders(&home, &cfg.learn_roots, &cfg.protected_paths(&home));
+            if let Some(c) = conn.as_ref() {
+                let _ = db::save_folders(c, &folders);
+            }
+            let _ = app.emit("learned", LearnedSummary::new(&folders));
+        }
         let mut i = base;
         for rel in &cfg.bulk_scope {
             let dir = home.join(rel);
@@ -74,7 +85,7 @@ fn scan_bulk(app: tauri::AppHandle, state: State<AppState>) {
                     let p = e.path();
                     if p.is_file() {
                         if let Some(prop) =
-                            engine::propose(&p, &cfg, &home, i, ocr_bin.as_deref(), &hints)
+                            engine::propose(&p, &cfg, &home, i, ocr_bin.as_deref(), &hints, &folders)
                         {
                             let _ = app.emit("proposal", prop);
                         }
@@ -146,6 +157,21 @@ struct AutoApplied {
     move_id: String,
 }
 
+#[derive(Clone, Serialize)]
+struct LearnedSummary {
+    count: u32,
+    names: Vec<String>,
+}
+
+impl LearnedSummary {
+    fn new(folders: &[learn::Folder]) -> Self {
+        LearnedSummary {
+            count: folders.len() as u32,
+            names: folders.iter().map(|f| f.name.clone()).collect(),
+        }
+    }
+}
+
 // Batch approve — runs on a worker thread (its own DB connection) and streams
 // "apply-result" events, so the UI stays responsive even for 100s of files
 // (and slow Finder-backed trashes don't freeze the app).
@@ -194,8 +220,37 @@ fn undo_move(state: State<AppState>, id: String) -> Result<(), String> {
     mover::undo(&conn, &id)
 }
 
+// Re-learn the user's folder taxonomy + fingerprints on demand (background).
+#[tauri::command]
+fn relearn(app: tauri::AppHandle) {
+    std::thread::spawn(move || {
+        let home = home();
+        let cfg = Config::load_or_init();
+        let folders = learn::learn_folders(&home, &cfg.learn_roots, &cfg.protected_paths(&home));
+        if let Ok(c) = db::open() {
+            let _ = db::save_folders(&c, &folders);
+        }
+        let _ = app.emit("learned", LearnedSummary::new(&folders));
+    });
+}
+
 fn main() {
     let cfg = Config::load_or_init();
+
+    // Headless: print the folder taxonomy Zortbit learns, then exit. (Debug aid.)
+    if std::env::args().any(|a| a == "--learn-dump") {
+        let home = home();
+        let folders = learn::learn_folders(&home, &cfg.learn_roots, &cfg.protected_paths(&home));
+        println!("learned {} folders from {:?}:", folders.len(), cfg.learn_roots);
+        for f in &folders {
+            let mut t: Vec<_> = f.tokens.iter().collect();
+            t.sort_by(|a, b| b.1.cmp(a.1));
+            let top: Vec<String> = t.into_iter().take(8).map(|(k, _)| k.clone()).collect();
+            println!("  {:<18} {:>4} files  [{}]", f.name, f.file_count, top.join(", "));
+        }
+        return;
+    }
+
     let conn = db::open().expect("open zortbit.db");
 
     // OCR sidecar (src-tauri/bin/zb_ocr). Dev resolution via the crate manifest
@@ -219,7 +274,8 @@ fn main() {
             approve,
             approve_many,
             skip,
-            undo_move
+            undo_move,
+            relearn
         ])
         .on_window_event(|window, event| {
             // Click-away: hide the popover when it loses focus (menu-bar behaviour).
@@ -267,6 +323,23 @@ fn main() {
                 })
                 .build(app)?;
 
+            // Learn the user's folder taxonomy once at startup (background), so the
+            // watcher has fingerprints before the first file lands.
+            let learn_handle = app.handle().clone();
+            let learn_cfg = cfg.clone();
+            std::thread::spawn(move || {
+                let home = home();
+                let folders = learn::learn_folders(
+                    &home,
+                    &learn_cfg.learn_roots,
+                    &learn_cfg.protected_paths(&home),
+                );
+                if let Ok(c) = db::open() {
+                    let _ = db::save_folders(&c, &folders);
+                }
+                let _ = learn_handle.emit("learned", LearnedSummary::new(&folders));
+            });
+
             let handle = app.handle().clone();
             let cfg2 = cfg.clone();
             let ocr2 = ocr_for_watch.clone();
@@ -296,6 +369,7 @@ fn watch(handle: tauri::AppHandle, cfg: Config, ocr_bin: Option<std::path::PathB
                     .as_ref()
                     .map(|c| engine::hint_string(c, &cfg))
                     .unwrap_or_default();
+                let folders = hint_conn.as_ref().map(db::load_folders).unwrap_or_default();
                 for ev in events {
                     if !matches!(ev.kind, EventKind::Create(_)) {
                         continue;
@@ -306,7 +380,7 @@ fn watch(handle: tauri::AppHandle, cfg: Config, ocr_bin: Option<std::path::PathB
                         }
                         let c = counter.fetch_add(1, Ordering::SeqCst);
                         if let Some(prop) =
-                            engine::propose(path, &cfg, &home, c, ocr_bin.as_deref(), &hints)
+                            engine::propose(path, &cfg, &home, c, ocr_bin.as_deref(), &hints, &folders)
                         {
                             // Auto mode: silently apply a TRUSTED, high-confidence MOVE in the
                             // background. Never auto-trash, never auto-touch sensitive files.

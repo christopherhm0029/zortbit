@@ -31,6 +31,12 @@ pub struct Config {
     pub category_help: Vec<String>, // optional per-category definitions injected into the classifier prompt
     #[serde(default)]
     pub rules: Vec<Rule>, // deterministic filename-keyword → category routing, applied BEFORE the model
+    #[serde(default = "default_learn_roots")]
+    pub learn_roots: Vec<String>, // folders whose subfolders Zortbit learns as your taxonomy + fingerprints
+}
+
+fn default_learn_roots() -> Vec<String> {
+    vec!["Documents".into()]
 }
 
 /// A deterministic routing rule: if the (lowercased) filename contains `contains`,
@@ -92,6 +98,7 @@ impl Default for Config {
             api_key: String::new(),
             category_help: Vec::new(),
             rules: Vec::new(),
+            learn_roots: default_learn_roots(),
         }
     }
 }

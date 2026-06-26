@@ -32,9 +32,60 @@ pub fn open() -> rusqlite::Result<Connection> {
             suggested_name TEXT,
             target_folder  TEXT,
             source         TEXT
+        );
+        CREATE TABLE IF NOT EXISTS folders (
+            name        TEXT PRIMARY KEY,
+            source_path TEXT NOT NULL,
+            file_count  INTEGER NOT NULL,
+            tokens      TEXT NOT NULL,
+            updated     TEXT NOT NULL
         );",
     )?;
     Ok(conn)
+}
+
+// Cache the learned folder fingerprints (full replace — discovery is cheap).
+pub fn save_folders(conn: &Connection, folders: &[crate::learn::Folder]) -> rusqlite::Result<()> {
+    conn.execute("DELETE FROM folders", [])?;
+    let now = chrono::Local::now().to_rfc3339();
+    let mut stmt = conn.prepare(
+        "INSERT INTO folders (name, source_path, file_count, tokens, updated) VALUES (?1,?2,?3,?4,?5)",
+    )?;
+    for f in folders {
+        let toks = serde_json::to_string(&f.tokens).unwrap_or_else(|_| "{}".into());
+        stmt.execute(rusqlite::params![
+            f.name,
+            f.source_path,
+            f.file_count as i64,
+            toks,
+            now
+        ])?;
+    }
+    Ok(())
+}
+
+pub fn load_folders(conn: &Connection) -> Vec<crate::learn::Folder> {
+    let mut stmt = match conn.prepare("SELECT name, source_path, file_count, tokens FROM folders") {
+        Ok(s) => s,
+        Err(_) => return Vec::new(),
+    };
+    let rows = stmt.query_map([], |r| {
+        let name: String = r.get(0)?;
+        let source_path: String = r.get(1)?;
+        let fc: i64 = r.get(2)?;
+        let toks: String = r.get(3)?;
+        let tokens = serde_json::from_str(&toks).unwrap_or_default();
+        Ok(crate::learn::Folder {
+            name,
+            source_path,
+            file_count: fc as u32,
+            tokens,
+        })
+    });
+    match rows {
+        Ok(it) => it.filter_map(|x| x.ok()).collect(),
+        Err(_) => Vec::new(),
+    }
 }
 
 pub fn log_move(
