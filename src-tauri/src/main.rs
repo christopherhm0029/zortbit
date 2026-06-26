@@ -17,6 +17,7 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Mutex;
 use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
 use tauri::{Emitter, Manager, State};
+use tauri_plugin_notification::NotificationExt;
 
 struct AppState {
     cfg: Config,
@@ -289,6 +290,7 @@ fn main() {
     let ocr_for_watch = ocr_bin.clone();
 
     tauri::Builder::default()
+        .plugin(tauri_plugin_notification::init())
         .manage(AppState {
             cfg: cfg.clone(),
             conn: Mutex::new(conn),
@@ -436,6 +438,17 @@ fn watch(handle: tauri::AppHandle, cfg: Config, ocr_bin: Option<std::path::PathB
                                                 &prop.current_name, &prop.suggested_name,
                                                 &prop.target_folder, &prop.source,
                                             );
+                                            // Friendly, non-invasive heads-up (Otto's
+                                            // icon) so you always see where things went.
+                                            let _ = handle
+                                                .notification()
+                                                .builder()
+                                                .title("Zortbit")
+                                                .body(format!(
+                                                    "Moved \"{}\" → {} ✨",
+                                                    prop.current_name, cat
+                                                ))
+                                                .show();
                                             println!("[zortbit] auto-filed: {}", prop.current_name);
                                             let _ = handle.emit(
                                                 "auto-applied",
