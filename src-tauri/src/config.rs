@@ -27,6 +27,19 @@ pub struct Config {
     pub endpoint: String, // OpenAI-compatible chat URL (used when provider != "ollama")
     #[serde(default)]
     pub api_key: String, // optional bearer token (local servers usually need none)
+    #[serde(default)]
+    pub category_help: Vec<String>, // optional per-category definitions injected into the classifier prompt
+    #[serde(default)]
+    pub rules: Vec<Rule>, // deterministic filename-keyword → category routing, applied BEFORE the model
+}
+
+/// A deterministic routing rule: if the (lowercased) filename contains `contains`,
+/// file it straight into `category` (which must be one of `categories`). These live
+/// in the user's own config.json — the repo ships none, so no project names leak.
+#[derive(Clone, Serialize, Deserialize)]
+pub struct Rule {
+    pub contains: String,
+    pub category: String,
 }
 
 fn default_provider() -> String {
@@ -77,6 +90,8 @@ impl Default for Config {
             provider: "ollama".into(),
             endpoint: String::new(),
             api_key: String::new(),
+            category_help: Vec::new(),
+            rules: Vec::new(),
         }
     }
 }

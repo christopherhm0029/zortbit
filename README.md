@@ -43,7 +43,8 @@ folders you actually approve.
 
 - macOS 13+ (Apple Silicon)
 - [Rust](https://rustup.rs) and [Node.js](https://nodejs.org)
-- [Ollama](https://ollama.com) with a small model: `ollama pull qwen2.5:3b`
+- [Ollama](https://ollama.com) with a local model: `ollama pull qwen2.5:7b`
+  (a 7B model classifies noticeably better than 3B; use `qwen2.5:3b` on low-RAM machines)
 - Xcode Command Line Tools (`xcode-select --install`) — builds the OCR sidecar.
   Optional: without it, Zortbit still files by name and type.
 
@@ -79,13 +80,29 @@ Edit `~/Library/Application Support/com.xaviour.zortbit/config.json`:
 | Key | Meaning |
 |---|---|
 | `categories` | Your project/area folders — the closed list the model chooses from |
+| `category_help` | Optional one-line **meaning per category** — so the model files by intent, not by a stray keyword |
+| `rules` | Optional `{ "contains": "…", "category": "…" }` list — deterministic filename-keyword routing, applied **before** the model |
 | `bulk_scope` | Folders to scan |
 | `protected` | Folders Zortbit must never touch |
 | `organize_base` | Where organized files go (default `~/Organized`, kept local) |
-| `model` | The model id (e.g. `qwen2.5:3b`) |
+| `model` | The model id (e.g. `qwen2.5:7b`) |
 | `provider` | `ollama` (default) or `openai` for any OpenAI-compatible server |
 | `endpoint` | OpenAI-compatible chat URL (used when `provider` is `openai`) |
 | `automation` | `propose` (default) · or `auto` to file trusted patterns in the background |
+
+### Teach it your folders
+
+Definitions + rules are the difference between "guesses by keyword" and "files like you would":
+
+```json
+{
+  "category_help": ["Finance: invoices, receipts, statements, tax"],
+  "rules": [{ "contains": "invoice", "category": "Finance" }]
+}
+```
+
+A `rules` entry is matched against the filename **before** the model runs, so named-by-project
+files (`invoice-*.pdf`, `acme-*.docx`) never depend on the model guessing right.
 
 ### Use any local model — Ollama, Foundry Local, LM Studio…
 
